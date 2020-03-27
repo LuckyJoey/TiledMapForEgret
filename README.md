@@ -1,2 +1,0 @@
-# TiledMapForEgret
-tiledMapForEgret
