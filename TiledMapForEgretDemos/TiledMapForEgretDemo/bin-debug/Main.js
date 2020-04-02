@@ -120,46 +120,12 @@ var Main = (function (_super) {
                     case 4:
                         userInfo = _a.sent();
                         console.log(userInfo);
-                        v = new GameScene();
+                        v = new GameSceneUI();
                         this.addChild(v);
-                        this.TestBtn();
                         return [2 /*return*/];
                 }
             });
         });
-    };
-    Main.prototype.TiledMapMove = function (x, y) {
-        TiledMap.Instance.TiledMapMove(x, y);
-    };
-    Main.prototype.TestBtn = function () {
-        var _this = this;
-        var btnLeft = new eui.Button();
-        btnLeft.label = "left";
-        this.addChild(btnLeft);
-        btnLeft.x = 100;
-        btnLeft.y = 100;
-        btnLeft.addEventListener(egret.TouchEvent.TOUCH_TAP, function () { _this.TiledMapMove(-30, 0); }, this);
-        //console.log("zindex:"+btnLeft.zIndex)
-        var btnRight = new eui.Button();
-        btnRight.label = "right";
-        this.addChild(btnRight);
-        btnRight.x = 100;
-        btnRight.y = 200;
-        btnRight.addEventListener(egret.TouchEvent.TOUCH_TAP, function () { _this.TiledMapMove(30, 0); }, this);
-        //console.log("zindex:"+btnRight.zIndex)
-        var btnDown = new eui.Button();
-        btnDown.label = "down";
-        this.addChild(btnDown);
-        btnDown.x = 100;
-        btnDown.y = 300;
-        btnDown.addEventListener(egret.TouchEvent.TOUCH_TAP, function () { _this.TiledMapMove(0, 30); }, this);
-        //console.log("zindex:"+btnDown.zIndex)
-        var btnUp = new eui.Button();
-        btnUp.label = "up";
-        this.addChild(btnUp);
-        btnUp.x = 100;
-        btnUp.y = 400;
-        btnUp.addEventListener(egret.TouchEvent.TOUCH_TAP, function () { _this.TiledMapMove(0, -30); }, this);
     };
     Main.prototype.loadResource = function () {
         return __awaiter(this, void 0, void 0, function () {

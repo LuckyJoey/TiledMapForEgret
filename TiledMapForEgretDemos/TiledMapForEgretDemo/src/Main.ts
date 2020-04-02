@@ -67,44 +67,11 @@ class Main extends eui.UILayer {
         await platform.login();
         const userInfo = await platform.getUserInfo();
         console.log(userInfo);
-        let v= new GameScene();
+        let v= new GameSceneUI();
         this.addChild(v);
-        this.TestBtn();
+       
     }
-    private TiledMapMove(x:number,y:number)
-    {
-        TiledMap.Instance.TiledMapMove(x,y);
-    }
-    private TestBtn():void
-    {
-        let btnLeft=new eui.Button();
-        btnLeft.label="left"
-        this.addChild(btnLeft);
-        btnLeft.x=100;
-        btnLeft.y=100;
-        btnLeft.addEventListener(egret.TouchEvent.TOUCH_TAP,()=>{this.TiledMapMove(-30,0)},this )
-        //console.log("zindex:"+btnLeft.zIndex)
-        let btnRight=new eui.Button();
-        btnRight.label="right"
-        this.addChild(btnRight);
-        btnRight.x=100;
-        btnRight.y=200;
-        btnRight.addEventListener(egret.TouchEvent.TOUCH_TAP,()=>{this.TiledMapMove(30,0)},this )
-        //console.log("zindex:"+btnRight.zIndex)
-        let btnDown=new eui.Button();
-        btnDown.label="down"
-        this.addChild(btnDown);
-        btnDown.x=100;
-        btnDown.y=300;
-        btnDown.addEventListener(egret.TouchEvent.TOUCH_TAP,()=>{this.TiledMapMove(0,30)},this )
-        //console.log("zindex:"+btnDown.zIndex)
-        let btnUp=new eui.Button();
-        btnUp.label="up"
-        this.addChild(btnUp);
-        btnUp.x=100;
-        btnUp.y=400;
-        btnUp.addEventListener(egret.TouchEvent.TOUCH_TAP,()=>{this.TiledMapMove(0,-30)},this )
-    }
+  
 
 
 

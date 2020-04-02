@@ -3,8 +3,8 @@
 可制作瓦片地图，方便编辑关卡地图。可直接由美术/策划制作好关卡地图
 
 ps:
-官网地址:https://www.mapeditor.org/
-TiledMapEditor文件夹包含了低版本免费版安装包
+TiledMapEditor文件夹包含了低版本安装包
+其他版本可前往官网地址免费下载:https://www.mapeditor.org/
 2020.03.26
 ============================================================
 2.TiledMapForEgretDemos

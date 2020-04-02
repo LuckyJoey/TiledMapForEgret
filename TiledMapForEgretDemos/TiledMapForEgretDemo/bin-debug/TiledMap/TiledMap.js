@@ -9,6 +9,15 @@ var TiledMap = (function () {
         this.maplayers = []; //整块地图-所有层级
         this.oldmirrorRectX = -100000;
         this.tiledPointArray = [];
+        this.moveSpeed = 200;
+        /**
+         * mark:2020.04.01
+         * 地图编辑器中可对单个格子添加自定义属性(比如障碍属性，关于障碍属性，通过设置障碍层判断，计算复杂度更小)
+         * tiled.d.ts接口中暂未找到获得格子自定义属性的方法，可能要改tiled.js源码
+         * let tiledset:tiled.TMXTileset = this.tiled.tileset;
+         * tiledset.firstgid
+         * this.tiled.tileset.getSpecialTileDataByTileId(11))
+         */
     }
     Object.defineProperty(TiledMap, "Instance", {
         get: function () {
@@ -28,7 +37,8 @@ var TiledMap = (function () {
         configurable: true
     });
     /*加载地图*/
-    TiledMap.prototype.LoadMap = function (mapContainer, url) {
+    TiledMap.prototype.LoadMap = function (mapContainer, url, LoadMapCompleteFun) {
+        this.loadMapCompleteFun = LoadMapCompleteFun;
         this.mapContainer = mapContainer;
         /*初始化资源加载路径*/
         this.url = url;
@@ -51,14 +61,16 @@ var TiledMap = (function () {
         this.InitMapData();
         this.UpdateTiledMapRender();
         this.InitMapPoint();
+        if (this.loadMapCompleteFun) {
+            this.loadMapCompleteFun();
+        }
     };
     //初始化地图数据
     TiledMap.prototype.InitMapData = function () {
-        this.initMapPointX = 800;
-        this.initMapPointY = 600;
-        this.renderOffset = 100;
-        this.blockIndex = 2;
-        this.playerIndex = 3;
+        this.initMapPointX = TiledMapData.initMapPointX;
+        this.initMapPointY = TiledMapData.initMapPointY;
+        this.renderOffset = TiledMapData.renderOffset;
+        this.obstacleLayerIndexs = TiledMapData.obstacleLayerIndexs;
         this.rectX = this.initMapPointX;
         this.rectY = this.initMapPointY;
         this.renderWidth = GameData.stageWidth + this.renderOffset * 2;
@@ -66,16 +78,12 @@ var TiledMap = (function () {
     };
     //初始化地图坐标
     TiledMap.prototype.InitMapPoint = function () {
-        var _this = this;
-        this.maplayers.forEach(function (layer, i) {
-            layer.x = -_this.rectX - _this.renderOffset;
-            layer.y = -_this.rectY - _this.renderOffset;
-        });
+        this.tmxTileMap.x = -this.rectX - this.renderOffset;
+        this.tmxTileMap.y = -this.rectY - this.renderOffset;
     };
     //更新地图渲染
     TiledMap.prototype.UpdateTiledMapRender = function () {
         var _this = this;
-        this.SetPlayerParent(this.mapContainer.stage, 0);
         if (this.tmxTileMap != null) {
             this.tmxTileMap.destory();
             this.tmxTileMap = null;
@@ -89,9 +97,7 @@ var TiledMap = (function () {
         /*将地图添加到显示列表*/
         this.mapContainer.addChild(this.tmxTileMap);
         this.tmxTileMap.touchEnabled = true;
-        this.maplayers.forEach(function (layer, i) {
-            _this.maplayers.pop();
-        });
+        this.maplayers.splice(0);
         // 获取地图所有图形层
         this.tmxTileMap.getLayers().forEach(function (layer, i) {
             //console.log("layer:"+layer.name+",layerIndex:"+i);
@@ -102,13 +108,11 @@ var TiledMap = (function () {
             // let group:tiled.TMXObjectGroup = obj as tiled.TMXObjectGroup;
             // console.log("obj:"+group.name+"_group.getObjectCount:"+group.getObjectCount());
         });
-        this.SetPlayerParent(this.tmxTileMap, this.playerIndex);
     };
     //移动地图
-    TiledMap.prototype.TiledMapMove = function (x, y) {
-        var _this = this;
-        if (!this.VerifyTiledMapMove(x, y))
-            return;
+    TiledMap.prototype.TiledMapMove = function (x, y, moveSpeed) {
+        if (moveSpeed === void 0) { moveSpeed = 200; }
+        this.moveSpeed = moveSpeed;
         this.rectX += x;
         this.rectY += y;
         this.mirrorRectX = -this.rectX;
@@ -122,12 +126,12 @@ var TiledMap = (function () {
             this.mirrorRectY = 0;
             this.rectY = 0;
         }
-        if (this.mirrorRectX <= GameData.stageWidth - this.tmxTileMap.width) {
-            this.mirrorRectX = GameData.stageWidth - this.tmxTileMap.width;
+        if (this.mirrorRectX <= GameData.stageWidth - this.tmxTileMap.width + this.renderOffset * 2) {
+            this.mirrorRectX = GameData.stageWidth - this.tmxTileMap.width + this.renderOffset * 2;
             this.rectX = -this.mirrorRectX;
         }
-        if (this.mirrorRectY <= GameData.stageHeight - this.tmxTileMap.height) {
-            this.mirrorRectY = GameData.stageHeight - this.tmxTileMap.height;
+        if (this.mirrorRectY <= GameData.stageHeight - this.tmxTileMap.height + this.renderOffset * 2) {
+            this.mirrorRectY = GameData.stageHeight - this.tmxTileMap.height + this.renderOffset * 2;
             this.rectY = -this.mirrorRectY;
         }
         if (this.oldmirrorRectX == -100000) {
@@ -136,35 +140,38 @@ var TiledMap = (function () {
         }
         //渲染并移动地图
         this.UpdateTiledMapRender();
-        this.maplayers.forEach(function (layer, i) {
-            layer.x = _this.oldmirrorRectX - _this.renderOffset;
-            layer.y = _this.oldmirrorRectY - _this.renderOffset;
-            egret.Tween.get(layer).to({ x: _this.mirrorRectX - _this.renderOffset, y: _this.mirrorRectY - _this.renderOffset }, PlayerCtrl.Instance.speed);
-        });
+        this.tmxTileMap.x = this.oldmirrorRectX - this.renderOffset;
+        this.tmxTileMap.y = this.oldmirrorRectY - this.renderOffset;
+        egret.Tween.get(this.tmxTileMap).to({ x: this.mirrorRectX - this.renderOffset, y: this.mirrorRectY - this.renderOffset }, this.moveSpeed);
         this.oldmirrorRectX = this.mirrorRectX;
         this.oldmirrorRectY = this.mirrorRectY;
     };
-    //校验是否可以移动-校验角色四个顶点是否触碰不可行走格子
-    TiledMap.prototype.VerifyTiledMapMove = function (x, y) {
-        var gid = 0;
-        var tiledX = PlayerCtrl.Instance.player.pointX + this.rectX + this.renderOffset + x;
-        var tiledY = PlayerCtrl.Instance.player.pointY + this.rectY + this.renderOffset + y;
-        this.tiledPointArray.push(new egret.Point(tiledX - PlayerCtrl.Instance.player.width / 2, tiledY - PlayerCtrl.Instance.player.height / 2));
-        this.tiledPointArray.push(new egret.Point(tiledX - PlayerCtrl.Instance.player.width / 2, tiledY + PlayerCtrl.Instance.player.height / 2));
-        this.tiledPointArray.push(new egret.Point(tiledX + PlayerCtrl.Instance.player.width / 2, tiledY - PlayerCtrl.Instance.player.height / 2));
-        this.tiledPointArray.push(new egret.Point(tiledX + PlayerCtrl.Instance.player.width / 2, tiledY + PlayerCtrl.Instance.player.height / 2));
+    /**
+     * 校验角色是否碰撞障碍层
+     * @param moveX 移动x
+     * @param moveY 移动y
+     * @param playerWidth 角色宽
+     * @param playerHeight 角色长
+     * @param playerX 角色坐标x
+     * @param playerY 角色坐标y
+     */
+    TiledMap.prototype.VerifyObstacleTiled = function (moveX, moveY, playerWidth, playerHeight, playerX, playerY) {
+        this.tiled = null;
+        var tiledX = playerX + moveX;
+        var tiledY = playerY + moveY;
+        this.tiledPointArray.push(new egret.Point(tiledX - playerWidth / 2, tiledY - playerHeight / 2));
+        this.tiledPointArray.push(new egret.Point(tiledX - playerWidth / 2, tiledY + playerHeight / 2));
+        this.tiledPointArray.push(new egret.Point(tiledX + playerWidth / 2, tiledY - playerHeight / 2));
+        this.tiledPointArray.push(new egret.Point(tiledX + playerWidth / 2, tiledY + playerHeight / 2));
         for (var i = this.tiledPointArray.length - 1; i >= 0; i--) {
-            var id = this.maplayers[this.blockIndex].getTileId(this.tiledPointArray[i].x, this.tiledPointArray[i].y);
-            gid += id;
-            this.tiledPointArray.pop();
+            if (!this.tiled) {
+                for (var j = 0; j < this.obstacleLayerIndexs.length; j++) {
+                    this.tiled = this.maplayers[this.obstacleLayerIndexs[j]].getTile(this.tiledPointArray[i].x, this.tiledPointArray[i].y);
+                }
+            }
         }
-        return gid == 0;
-    };
-    //设置角色父物体
-    TiledMap.prototype.SetPlayerParent = function (parent, index) {
-        if (PlayerCtrl.Instance.player.body == null)
-            return;
-        parent.addChildAt(PlayerCtrl.Instance.player.body, index);
+        this.tiledPointArray.splice(0);
+        return this.tiled;
     };
     return TiledMap;
 }());
